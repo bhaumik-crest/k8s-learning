@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deployment
+spec:
+  
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-app
+  
+  template:
+    metadata:
+      labels:
+        app: node-app
+    spec:
+      volumes:
+        - name: task-pv-storage
+          persistentVolumeClaim:
+            claimName: task-pv-claim
+      containers:
+      - name: node-app
+        image: bhaumik20/getting-started
+        ports:
+        - name: nodejs-port
+          containerPort: 3000
+        env:
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: db-password
+          - name: MYSQL_HOST
+            value: "localhost"
+          - name: MYSQL_USER
+            value: "root"
+          - name: MYSQL_DB
+            value: "todos"
+      - name: mysql
+        image: mysql:5.7
+        volumeMounts:
+        - mountPath: "/var/lib/mysql"
+          name: task-pv-storage
+        ports:
+        - name: mysql-port
+          containerPort: 3306
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: db-password
+          - name: MYSQL_DATABASE
+            value: "todos"
